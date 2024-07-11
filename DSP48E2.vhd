@@ -341,7 +341,106 @@ entity DSP48E2 is
 end entity;
 
 architecture arch_DSP48E2 of DSP48E2 is
+
+    component DUAL_A_D_PREADDER is
+        port(
+            clk : in std_logic;
+            A : in std_logic_vector(29 downto 0);
+            ACIN : in std_logic_vector(29 downto 0);
+            D : in std_logic_vector(26 downto 0);
+            CEA1 : in std_logic;
+            CEA2 : in std_logic;
+            CED : in std_logic;
+            CEAD : in std_logic;
+            RSTA : in std_logic;
+            RSTD : in std_logic;
+            INMODE : in std_logic_vector(3 downto 0);
+            ACOUT : out std_logic_vector(29 downto 0);
+            XMUX : out std_logic_vector(29 downto 0);
+            AMULT : out std_logic_vector(26 downto 0)
+        );      
+    end component;
+
+
+    component DUAL_B_REGISTER is
+        port(
+            clk : in std_logic;
+            B : in std_logic_vector(17 downto 0);
+            BCIN : in std_logic_vector(17 downto 0);
+            BCOUT : out std_logic_vector(17 downto 0);
+            XMUX : out std_logic_vector(17 downto 0);
+            BMULT : out std_logic_vector(17 downto 0);
+    
+            CEB1 : in std_logic;
+            RSTB : in std_logic;
+            CEB2 : in std_logic;
+            INMODE :  in std_logic_vector(4 downto 0);
+        );
+    end component;
+
+    component MULT_25x18 is
+        port(
+            clk : in std_logic;
+            input_1 : in std_logic_vector(24 downto 0);
+            input_2 : in std_logic_vector(17 downto 0);
+            output : out std_logic_vector(47 downto 0)
+        );
+    end component;
+
+signal AMULT : std_logic_vector(24 downto 0);
+
+signal INMODE_4 : std_logic_vector(3 downto 0);
+signal INMODE_1 : std_logic;
+
+signal BCOUT : std_logic_vector(17 downto 0);
+signal XMUX : std_logic_vector(17 downto 0);
+signal BMULT : std_logic_vector(17 downto 0);
+
 begin
 
+impl_DUAL_A_D_PREADDER :  DUAL_A_D_PREADDER 
+        port map(
+            clk => clk,
+            A => A,
+            ACIN => ACIN,
+            D => D,
+            CEA1 => CEA1,
+            CEA2 => CEA2,
+            CED => CED,
+            CEAD => CEAD,
+            RSTA => RSTA,
+            RSTD => RSTD,
+            INMODE => INMODE_4,
+            ACOUT => ACOUT,
+            XMUX => XMUX,
+            AMULT => AMULT
+        );      
+
+
+    INMODE_4 <= INMODE(4 downto 0);
+    INMODE_1 <= INMODE(5);
+
+impl_DUAL_B_REGISTER : DUAL_B_REGISTER 
+        port map(
+            clk => clk,
+            B => B,
+            BCIN => BCIN,
+            BCOUT => BCOUT,
+            XMUX => XMUX,
+            BMULT => BMULT,
+    
+            CEB1 => CEB1,
+            RSTB => RSTB,
+            CEB2 => CEB2,
+            INMODE => INMODE_1;
+        );
+
+impl_MULT_25x18 : MULT_25x18 is
+        port map (
+            clk => clk,
+            input_1 => BMULT,
+            input_2 => AMULT,
+            output => 
+        );
 
 end architecture;
