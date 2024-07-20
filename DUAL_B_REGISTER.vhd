@@ -13,26 +13,32 @@ entity DUAL_B_REGISTER is
         CEB1 : in std_logic;
         RSTB : in std_logic;
         CEB2 : in std_logic;
-        INMODE :  in std_logic_vector(4 downto 0);
+        INMODE :  in std_logic;
     );
 end entity;
 
 architecture arch_DUAL_B_REGISTER of DUAL_B_REGISTER is
-    component D_FF18 is
+    component D_FF is
+        generic (
+            N : integer := 18
+        );
         port(
             clk : in std_logic;
             rst : in std_logic;
             ce : in std_logic;
-            input : in std_logic_vector(17 downto 0);
-            output : out std_logic_vector(17 downto 0)
+            input : in std_logic_vector(N-1 downto 0);
+            output : out std_logic_vector(N-1 downto 0)
         );
     end component;
 
-    component MUX18 is
+    component MUX is
+        generic(
+            N : integer := 30
+        );
         port (
-            in1 : in std_logic_vector(17 downto 0);
-            in2 : in std_logic_vector(17 downto 0);
-            output : out std_logic_vector(17 downto 0);
+            in1 : in std_logic_vector(N-1 downto 0);
+            in2 : in std_logic_vector(N-1 downto 0);
+            output : out std_logic_vector(N-1 downto 0);
             sel : in std_logic
         );
     end component;
@@ -43,7 +49,10 @@ signal mux_inmode_4_out : std_logic_vector(17 downto 0);
 
 begin
 
-B1 : D_FF18 
+B1 : D_FF
+    generic map(
+        N => 18
+    )
     port map(
         clk => clk,
         rst => RSTB,
@@ -53,7 +62,10 @@ B1 : D_FF18
     );
     
 
-B2 : D_FF18 
+B2 : D_FF
+    generic map(
+        N => 18
+    )
     port map(
         clk => clk,
         rst => RSTB,
@@ -62,13 +74,16 @@ B2 : D_FF18
         output => B2_out
     );
 
-MUX_INMODE_4:  MUX18 
-        port map (
-            in1 => 
-            in2 => B1_out,
-            output => mux_inmode_4_out,
-            sel => INMODE(4)
-        );
+MUX_INMODE_4:  MUX
+    generic map(
+        N => 18
+    )
+    port map(
+        in1 => ,
+        in2 => B1_out,
+        output => B_MULT,,
+        sel => INMODE
+    );
 
     B2B1 <= not INMODE(1) and mux_inmode_4_out;
 
