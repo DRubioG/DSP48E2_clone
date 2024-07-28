@@ -22,8 +22,8 @@ begin
     begin
         if rst = '0' then
             output <= (others=>'0');
-        elsif ce = '1' then
-            if rising_edge(clk) then
+        elsif rising_edge(clk) then
+            if ce = '1' then
                 output <= input;
             end if;
         end if;

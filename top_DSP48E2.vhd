@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity DSP48E2 is
+entity top_DSP48E2 is
     generic (
         ACASCREG : integer := 1;    -- In conjunction with AREG, selects the number of A input
                                     -- registers on the A cascade path, ACOUT. This attribute
@@ -340,61 +340,94 @@ entity DSP48E2 is
     );
 end entity;
 
-architecture arch_DSP48E2 of DSP48E2 is
+architecture arch_top_DSP48E2 of top_DSP48E2 is
 
-    component DUAL_A_D_PREADDER is
-        port(
-            clk : in std_logic;
-            A : in std_logic_vector(29 downto 0);
-            ACIN : in std_logic_vector(29 downto 0);
-            D : in std_logic_vector(26 downto 0);
-            CEA1 : in std_logic;
-            CEA2 : in std_logic;
-            CED : in std_logic;
-            CEAD : in std_logic;
-            RSTA : in std_logic;
-            RSTD : in std_logic;
-            INMODE : in std_logic_vector(3 downto 0);
-            ACOUT : out std_logic_vector(29 downto 0);
-            XMUX : out std_logic_vector(29 downto 0);
-            AMULT : out std_logic_vector(26 downto 0)
-        );      
-    end component;
+component DUAL_A_D_PREADDER is
+    port(
+        clk : in std_logic;
+        A : in std_logic_vector(29 downto 0);
+        ACIN : in std_logic_vector(29 downto 0);
+        D : in std_logic_vector(26 downto 0);
+        CEA1 : in std_logic;
+        CEA2 : in std_logic;
+        CED : in std_logic;
+        CEAD : in std_logic;
+        RSTA : in std_logic;
+        RSTD : in std_logic;
+        INMODE : in std_logic_vector(3 downto 0);
+        ACOUT : out std_logic_vector(29 downto 0);
+        XMUX : out std_logic_vector(29 downto 0);
+        AMULT : out std_logic_vector(24 downto 0)
+    );      
+end component;
 
 
-    component DUAL_B_REGISTER is
-        port(
-            clk : in std_logic;
-            B : in std_logic_vector(17 downto 0);
-            BCIN : in std_logic_vector(17 downto 0);
-            BCOUT : out std_logic_vector(17 downto 0);
-            XMUX : out std_logic_vector(17 downto 0);
-            BMULT : out std_logic_vector(17 downto 0);
-    
-            CEB1 : in std_logic;
-            RSTB : in std_logic;
-            CEB2 : in std_logic;
-            INMODE :  in std_logic_vector(4 downto 0);
-        );
-    end component;
+component DUAL_B_REGISTER is
+    port(
+        clk : in std_logic;
+        B : in std_logic_vector(17 downto 0);
+        BCIN : in std_logic_vector(17 downto 0);
+        BCOUT : out std_logic_vector(17 downto 0);
+        XMUX : out std_logic_vector(17 downto 0);
+        BMULT : out std_logic_vector(17 downto 0);
 
-    component MULT_25x18 is
-        port(
-            clk : in std_logic;
-            input_1 : in std_logic_vector(24 downto 0);
-            input_2 : in std_logic_vector(17 downto 0);
-            output : out std_logic_vector(47 downto 0)
-        );
-    end component;
+        CEB1 : in std_logic;
+        RSTB : in std_logic;
+        CEB2 : in std_logic;
+        INMODE :  in std_logic_vector(4 downto 0);
+    );
+end component;
+
+component MULT_25x18 is
+    port(
+        clk : in std_logic;
+        input_1 : in std_logic_vector(24 downto 0);
+        input_2 : in std_logic_vector(17 downto 0);
+        output : out std_logic_vector(47 downto 0)
+    );
+end component;
+
+component D_FF is
+    generic (
+        N : integer := 30
+    );
+    port(
+        clk : in std_logic;
+        rst : in std_logic;
+        ce : in std_logic;
+        input : in std_logic_vector(N-1 downto 0);
+        output : out std_logic_vector(N-1 downto 0)
+    );
+end component;
+
+component X_Y_Z is
+    port(
+        PCOUT_in : in std_logic_vector(46 downto 0);
+        A_B_in : in std_logic_vector(46 downto 0);
+        M_in : in std_logic_vector(46 downto 0);
+        C_in : in std_logic_vector(46 downto 0);
+        PCIN_in : in std_logic_vector(46 downto 0);
+        P_in : in std_logic_vector(46 downto 0);
+        opmode_in : in std_logic_vector(6 downto 0);
+        X_out : out std_logic_vector(46 downto 0);
+        Y_out : out std_logic_vector(46 downto 0);
+        Z_out : out std_logic_vector(46 downto 0)
+    );
+end component;
 
 signal AMULT : std_logic_vector(24 downto 0);
 
+signal INMODE_reg : std_logic_vector(4 downto 0);
 signal INMODE_4 : std_logic_vector(3 downto 0);
 signal INMODE_1 : std_logic;
 
 signal BCOUT : std_logic_vector(17 downto 0);
-signal XMUX : std_logic_vector(17 downto 0);
+signal a_XMUX : std_logic_vector(17 downto 0);
+signal b_XMUX : std_logic_vector(17 downto 0);
 signal BMULT : std_logic_vector(17 downto 0);
+
+signal M_wire, M_wire_reg : std_logic_vector(47 downto 0);
+signal PCOUT_s : std_logic_vector(PCOUT'range-1 downto 0);
 
 begin
 
@@ -412,13 +445,25 @@ impl_DUAL_A_D_PREADDER :  DUAL_A_D_PREADDER
             RSTD => RSTD,
             INMODE => INMODE_4,
             ACOUT => ACOUT,
-            XMUX => XMUX,
+            XMUX => a_XMUX,
             AMULT => AMULT
         );      
 
+impl_D_FF : D_FF
+    generic map (
+        N => 5
+    )
+    port map (
+        clk => clk,
+        rst => rst,
+        ce => ce,
+        input => INMODE;
+        output => INMODE_reg
+    );
 
-    INMODE_4 <= INMODE(4 downto 0);
-    INMODE_1 <= INMODE(5);
+
+    INMODE_4 <= INMODE_reg(4 downto 0);
+    INMODE_1 <= INMODE_reg(5);
 
 impl_DUAL_B_REGISTER : DUAL_B_REGISTER 
         port map(
@@ -426,7 +471,7 @@ impl_DUAL_B_REGISTER : DUAL_B_REGISTER
             B => B,
             BCIN => BCIN,
             BCOUT => BCOUT,
-            XMUX => XMUX,
+            XMUX => b_XMUX,
             BMULT => BMULT,
     
             CEB1 => CEB1,
@@ -440,7 +485,36 @@ impl_MULT_25x18 : MULT_25x18 is
             clk => clk,
             input_1 => BMULT,
             input_2 => AMULT,
-            output => 
+            output => M_wire
         );
+
+impl_M : D_FF
+        generic map (
+            N => 48
+        )
+        port map (
+            clk => clk,
+            rst => rst,
+            ce => ce,
+            input => M_wire;
+            output => M_wire_reg
+        );
+
+
+impl_X_Y_Z : X_Y_Z 
+    port map(
+        PCOUT_in => PCOUT_s,
+        A_B_in => a_XMUX & b_XMUX,
+        M_in : in std_logic_vector(46 downto 0);
+        C_in : in std_logic_vector(46 downto 0);
+        PCIN_in : in std_logic_vector(46 downto 0);
+        P_in : in std_logic_vector(46 downto 0);
+        opmode_in : in std_logic_vector(6 downto 0);
+        X_out : out std_logic_vector(46 downto 0);
+        Y_out : out std_logic_vector(46 downto 0);
+        Z_out : out std_logic_vector(46 downto 0)
+    );
+
+    PCOUT <= PCOUT_s;
 
 end architecture;

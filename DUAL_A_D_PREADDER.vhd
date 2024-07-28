@@ -16,7 +16,7 @@ entity DUAL_A_D_PREADDER is
         INMODE : in std_logic_vector(4 downto 0);
         ACOUT : out std_logic_vector(29 downto 0);
         XMUX : out std_logic_vector(29 downto 0);
-        AMULT : out std_logic_vector(26 downto 0)
+        AMULT : out std_logic_vector(24 downto 0)
     );      
 end entity;
 

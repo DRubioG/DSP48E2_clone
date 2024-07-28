@@ -16,14 +16,18 @@ end entity;
 architecture arch_MUX of MUX is
 begin
     
-    process(in1, in2, sel)
-    begin
-        case sel is
-            when '0' =>
-                output <= in1;
-            when '1' => 
-                output <= in2;
-        end case;
-    end process;
+
+    output <= in1 when sel = '0' else
+              in2;
+              
+    -- process(in1, in2, sel)
+    -- begin
+    --     case sel is
+    --         when '0' =>
+    --             output <= in1;
+    --         when '1' => 
+    --             output <= in2;
+    --     end case;
+    -- end process;
 
 end architecture;
